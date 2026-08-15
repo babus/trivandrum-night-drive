@@ -1,0 +1,15 @@
+[out:json][timeout:600];
+(
+  node["amenity"](8.462,76.905,8.556,77.000);
+  node["tourism"](8.462,76.905,8.556,77.000);
+  node["historic"](8.462,76.905,8.556,77.000);
+  node["shop"](8.462,76.905,8.556,77.000);
+  node["place"](8.462,76.905,8.556,77.000);
+  way["tourism"](8.462,76.905,8.556,77.000);
+  way["historic"](8.462,76.905,8.556,77.000);
+  way["shop"](8.462,76.905,8.556,77.000);
+  way["amenity"~"^(marketplace|cinema|bus_station|theatre|library|university|college|place_of_worship)$"](8.462,76.905,8.556,77.000);
+);
+out body;
+>;
+out skel qt;

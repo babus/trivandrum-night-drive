@@ -1,0 +1,5 @@
+[out:json][timeout:600];
+way["building"](8.556,76.930,8.592,77.000);
+out body;
+>;
+out skel qt;

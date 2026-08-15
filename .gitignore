@@ -1,0 +1,13 @@
+# Raw Overpass dumps — 141 MB, and only build_data.py reads them.
+# Refetch with src/fetch.sh, fetch_ext.sh, fetch_south.sh, fetch_buildings.sh.
+src/bld_*.json
+src/roads*.json
+src/poi*.json
+src/stops.json
+
+# Pre-compressed copy for serve.py on the LAN. GitHub Pages compresses on the
+# fly, so shipping it would be 5 MB of history for nothing.
+index.html.gz
+
+.DS_Store
+__pycache__/
