@@ -1,6 +1,6 @@
 # Trivandrum Night Drive
 
-A top-down night-driving toy over ~374 km² of the real Thiruvananthapuram, rendered from
+A top-down night-driving toy over ~415 km² of the real Thiruvananthapuram, rendered from
 OpenStreetMap data. Pick where you start and where you're headed, follow the guide arrow,
 and your trail becomes a printed "journey receipt" — distance, detour ratio, time over the
 speed limit, landmarks passed, and a generated title.
@@ -48,17 +48,18 @@ on them; if you do get stuck in a dead end for two seconds the car is put back o
 
 ## What the data is
 
-Covers bbox `8.375,76.858 – 8.592,77.000` — about 15.6 x 24 km. Kazhakkoottam, Technopark
+Covers bbox `8.375,76.843 – 8.592,77.000` — about 17.3 x 24.0 km. Kazhakkoottam, Technopark
 and Kariavattom in the north; Kovalam and Vizhinjam in the south; the coast from Kochuveli
 through Shanghumugham and Valiyathura to Poonthura; east to Vattiyoorkavu and Poojappura.
 
 | | |
 |---|---|
-| roads | 30,930 pieces (chunked ≤220 m), RDP at 1.4 m; 1,689 carry a posted `maxspeed` |
-| buildings | 177,395 footprints ≥25 m², height from `building:levels` or footprint area |
-| areas | 992 parks / water / sand, clipped to 700 m tiles |
-| landmarks | 2,386 in 7 categories — food 623, worship 543, shops 390, hotels 304, culture 273, bakeries 217, parks 36 |
-| places | 236 `place=suburb/neighbourhood/locality` names, drawn as district labels |
+| roads | 31,702 pieces (chunked ≤220 m and ≤14 points), RDP at 1.4 m; 1,692 carry a posted `maxspeed` |
+| buildings | 117,163 footprints ≥80 m², height from `building:levels` or footprint area |
+| areas | 1,030 parks / water / sand, clipped to 700 m tiles |
+| landmarks | 2,426 in 7 categories — food 634, worship 549, shops 405, stays 305, culture 275, bakeries 221, parks 37; 36 flagged notable |
+| places | 817 `place=` names — 78 suburbs, 107 neighbourhoods, 631 junctions and localities, plus the city itself |
+| route graph | 46,804 nodes, 54,315 edges |
 
 Coordinates are projected to local metres and stored as integer decimetres. Every landmark
 carries a one-line descriptor built from its tags ("Hindu temple", "South Indian ·

@@ -2858,7 +2858,7 @@
   function placeOption(p, from) {
     var o = document.createElement('option');
     o.value = p.x + ',' + p.y;
-    // Straight-line, because routing 236 places would stall the title screen.
+    // Straight-line, because routing 817 places would stall the title screen.
     // The road is always longer; the credit line says so.
     o.textContent = from ? p.n + ' · ' + kmBetween(from, p) : p.n;
     o.dataset.place = p.n;
@@ -2897,7 +2897,7 @@
   }
 
   // Where a drive is headed. Rebuilt whenever the start moves: short drives are
-  // the ones people finish, and sorted alphabetically across 236 entries the near
+  // the ones people finish, and sorted alphabetically across 817 entries the near
   // ones are unfindable -- so the closest are lifted into their own group on top.
   function buildDestPicker() {
     var sel = document.getElementById('destArea');
