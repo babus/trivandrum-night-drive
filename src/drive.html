@@ -47,6 +47,36 @@
   /* ---------- HUD ---------- */
   .hud { position: absolute; pointer-events: none; z-index: 5; }
 
+  /* Route guidance: the arrow points at the house, the line under it names the
+     next manoeuvre. Sits top-centre so it reads without leaving the road. */
+  #guide {
+    left: 50%; top: 20px; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 13px;
+    padding: 9px 20px 9px 13px;
+    background: rgba(8,13,11,0.74);
+    border: 1px solid rgba(242,163,43,0.34);
+    border-radius: 999px;
+    -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px);
+    white-space: nowrap;
+  }
+  /* display:flex on an id beats the UA sheet's [hidden]{display:none}, so say it */
+  #guide[hidden] { display: none; }
+  .btn.icon.off { opacity: 0.42; }
+  #guideArrow { width: 29px; height: 29px; flex: none; }
+  #guideArrow svg {
+    display: block; width: 100%; height: 100%; fill: var(--marigold);
+    transition: transform 90ms linear;
+  }
+  #guideDist { font-size: 19px; line-height: 1.05; font-variant-numeric: tabular-nums; }
+  #guideTurn {
+    font-size: 10.5px; letter-spacing: 0.13em; text-transform: uppercase;
+    color: rgba(229,220,199,0.6); margin-top: 3px;
+  }
+  #guide.close { border-color: rgba(232,87,43,0.75); }
+  #guide.close #guideArrow svg { fill: var(--flame); }
+  #guide.arrived { border-color: rgba(67,227,154,0.8); }
+  #guide.arrived #guideArrow svg { fill: #43E39A; }
+
   #cluster {
     left: 24px; bottom: 24px;
     display: flex; align-items: flex-end; gap: 28px;
@@ -66,19 +96,17 @@
   .readout .value.over { color: var(--flame); }
   .readout .value .assumed { color: rgba(229,220,199,0.32); margin-left: 3px; }
 
-  #placard {
-    left: 24px; top: 22px;
-    max-width: 300px;
-    display: flex; flex-direction: column; gap: 5px;
+  /* The street you are on, and only that. The old banner paired it with a 27px
+     city name and sat where the buttons are; this is one line, tucked under the
+     guidance, clipped rather than wrapped so it can never grow into anything. */
+  #roadName {
+    left: 24px; top: 96px;
+    max-width: min(46vw, 340px);
+    font-family: var(--serif); font-size: 21px; color: rgba(229,220,199,0.82);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    text-shadow: 0 1px 6px rgba(6,9,16,0.9);
   }
-  #placard .city {
-    font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase;
-    color: rgba(229,220,199,0.5);
-  }
-  #placard .street {
-    font-family: var(--serif); font-size: 27px; color: var(--bone);
-    text-wrap: balance; line-height: 1.15;
-  }
+  #roadName[hidden] { display: none; }
 
   #minimap {
     right: 24px; top: 22px;
@@ -102,32 +130,6 @@
   .tick .cat { color: rgba(242,163,43,0.55); display: block; font-size: 10px; }
   @keyframes tickIn { from { opacity: 0; transform: translateX(10px); } }
 
-  /* ---------- discovery card ---------- */
-  #discovery {
-    left: 50%; bottom: 30px; transform: translateX(-50%);
-    width: min(420px, calc(100vw - 40px));
-    background: rgba(14,22,19,0.93);
-    border: 1px solid rgba(242,163,43,0.35);
-    border-left: 3px solid var(--marigold);
-    padding: 13px 18px 14px;
-    display: flex; flex-direction: column; gap: 3px;
-    animation: cardIn 300ms cubic-bezier(0.16,0.9,0.3,1) both;
-  }
-  #discovery[hidden] { display: none; }
-  @keyframes cardIn { from { opacity: 0; transform: translate(-50%, 14px); } }
-  @media (prefers-reduced-motion: reduce) { #discovery { animation: none; } }
-
-  .dCat {
-    font-size: 10px; letter-spacing: 0.24em; text-transform: uppercase;
-    color: var(--marigold); display: flex; justify-content: space-between; gap: 10px;
-  }
-  #dStar { color: var(--bone); letter-spacing: 0.16em; }
-  #dStar[hidden] { display: none; }
-  .dName { font-family: var(--serif); font-size: 22px; color: var(--bone); line-height: 1.15; }
-  .dDesc { font-size: 12px; color: rgba(229,220,199,0.66); }
-  .dHours { font-size: 11px; color: rgba(229,220,199,0.4); }
-  .dHours:empty, .dDesc:empty { display: none; }
-
   /* ---------- buttons ---------- */
   .btn {
     font-family: var(--mono); font-size: 11px;
@@ -149,8 +151,10 @@
   /* ---------- touch controls ---------- */
   #touch { position: absolute; inset: 0; z-index: 6; display: none; pointer-events: none; }
   @media (pointer: coarse) { #touch.armed { display: block; } }
+  /* The page asks for viewport-fit=cover, so it has to pay the insets back --
+     otherwise the pedals sit under the home indicator and the Safari toolbar. */
   .pad {
-    position: absolute; bottom: 26px;
+    position: absolute; bottom: calc(26px + env(safe-area-inset-bottom, 0px));
     width: 78px; height: 78px; border-radius: 50%;
     border: 1px solid rgba(229,220,199,0.22);
     background: rgba(14,22,19,0.55);
@@ -162,22 +166,62 @@
   .pad.on { background: rgba(242,163,43,0.85); color: var(--ink-deep); border-color: var(--marigold); }
   #padL { left: 22px; } #padR { left: 112px; }
   #padGas { right: 22px; border-color: rgba(242,163,43,0.4); color: var(--marigold); }
-  #padBrake { right: 112px; width: 64px; height: 64px; bottom: 33px; font-size: 15px; }
+  #padBrake {
+    right: 112px; width: 64px; height: 64px; font-size: 15px;
+    bottom: calc(33px + env(safe-area-inset-bottom, 0px));
+  }
 
   /* ---------- narrow screens: the minimap would otherwise sit on the street name ---------- */
   @media (max-width: 620px) {
-    #placard { top: 14px; left: 14px; max-width: 46vw; }
-    #placard .city { font-size: 9px; letter-spacing: 0.22em; }
-    #placard .street { font-size: 16px; }
-    #minimap { width: 104px; height: 104px; right: 14px; top: 14px; }
-    #actions { top: 128px; bottom: auto; right: 14px; }
+    /* The guidance is the whole point of this build, so on a phone it gets the
+       top strip to itself and everything else moves down a row. Centred at
+       620px it collided with both the street name and the minimap. */
+    #guide {
+      left: 14px; right: 14px; transform: none;
+      top: calc(14px + env(safe-area-inset-top, 0px));
+      justify-content: center; border-radius: 16px; padding: 8px 14px;
+    }
+    #guideArrow { width: 26px; height: 26px; }
+    #guideDist { font-size: 17px; }
+    #guideTurn { font-size: 9.5px; letter-spacing: 0.1em; }
+    #minimap {
+      width: 104px; height: 104px; right: 14px;
+      top: calc(80px + env(safe-area-inset-top, 0px));
+    }
+    /* left of the minimap, which starts around 310px on a 428px screen */
+    #roadName {
+      left: 14px; top: calc(84px + env(safe-area-inset-top, 0px));
+      max-width: calc(100vw - 145px); font-size: 17px;
+    }
+    #actions { top: calc(194px + env(safe-area-inset-top, 0px)); bottom: auto; right: 14px; }
     #finish { padding: 10px 12px; letter-spacing: 0.1em; }
     .btn.icon { width: 34px; }
-    #ticker { top: 182px; right: 14px; width: 148px; }
-    #cluster { left: 14px; bottom: 120px; gap: 16px; }
+    #ticker { top: calc(248px + env(safe-area-inset-top, 0px)); right: 14px; width: 148px; }
+    #cluster { left: 14px; bottom: calc(120px + env(safe-area-inset-bottom, 0px)); gap: 16px; }
     .readout.big .value { font-size: 30px; }
     .readout .value { font-size: 12px; }
     .readout .label { font-size: 9px; letter-spacing: 0.12em; }
+  }
+
+  /* Landscape phone. The pedals own both bottom corners here, so nothing else can
+     live along the bottom: at 844x390 the gas pad sat on top of Finish & print and
+     the steering pads covered the speed. Readouts and buttons move up the sides. */
+  @media (max-height: 500px) {
+    #guide { top: 10px; padding: 7px 16px 7px 11px; }
+    #guideArrow { width: 24px; height: 24px; }
+    #guideDist { font-size: 16px; }
+    #guideTurn { font-size: 9px; margin-top: 2px; }
+    #minimap { width: 92px; height: 92px; top: 12px; right: 14px; }
+    #actions { top: 116px; right: 14px; bottom: auto; }
+    .btn.icon { width: 34px; }
+    #finish { padding: 9px 11px; letter-spacing: 0.08em; font-size: 11px; }
+    #cluster { left: 14px; top: 78px; bottom: auto; gap: 13px; }
+    /* under the readouts here, since landscape puts those along the top-left */
+    #roadName { left: 14px; top: 124px; max-width: 42vw; font-size: 16px; }
+    .readout.big .value { font-size: 24px; }
+    .readout .value { font-size: 11px; }
+    .readout .label { font-size: 8.5px; letter-spacing: 0.1em; }
+    #ticker { display: none; }
   }
 
   /* ---------- overlays ---------- */
@@ -188,6 +232,11 @@
     backdrop-filter: blur(2px);
   }
   .veil[hidden] { display: none; }
+
+  /* The card grew by two fields when the name and the message arrived, and a
+     centred grid clips what it cannot fit: at 360x640 the Start button sat 59 px
+     below the fold with nothing to scroll. Top-aligned and scrollable instead. */
+  #titleVeil { overflow-y: auto; place-items: start center; padding: 22px 16px 34px; }
 
   #titlecard { max-width: 470px; display: flex; flex-direction: column; gap: 22px; }
   #titlecard .eyebrow {
@@ -203,17 +252,16 @@
     margin: 0; font-size: 13px; line-height: 1.65;
     color: rgba(229,220,199,0.62); max-width: 42ch;
   }
-  .keys { display: flex; flex-wrap: wrap; gap: 8px 18px; }
-  .keys span {
-    font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
-    color: rgba(229,220,199,0.45);
-  }
-  .keys kbd {
-    font-family: var(--mono); font-size: 10px;
-    border: 1px solid rgba(229,220,199,0.26); border-radius: 2px;
-    padding: 2px 6px; margin-right: 5px; color: var(--bone);
-  }
   #titlecard .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+
+  /* Short screens -- small phones upright, and any phone in landscape. Tighten
+     rather than rely on scrolling, so Start stays in reach without a swipe. */
+  @media (max-height: 730px) {
+    #titlecard { gap: 13px; }
+    #titlecard h1 { font-size: clamp(30px, 6vw, 40px); }
+    #titlecard p { font-size: 12px; line-height: 1.5; }
+    .carStats { display: none; }
+  }
 
   .fields { display: flex; gap: 12px; flex-wrap: wrap; }
   .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1 1 190px; max-width: 330px; }
@@ -227,11 +275,13 @@
     font-size: 10px; letter-spacing: 0.24em; text-transform: uppercase;
     color: rgba(229,220,199,0.45);
   }
-  #startArea, #carPick {
+  #startArea, #destArea, #carPick {
     font-family: var(--mono); font-size: 13px;
     background: rgba(14,22,19,0.9); color: var(--bone);
     border: 1px solid rgba(229,220,199,0.28); border-radius: 2px;
-    padding: 10px 12px; width: 100%;
+    /* Room on the right for the drawn arrow -- place names with a distance
+       suffix are long enough to run underneath it otherwise. */
+    padding: 10px 34px 10px 12px; width: 100%; text-overflow: ellipsis;
     -webkit-appearance: none; appearance: none;
     background-image: linear-gradient(45deg, transparent 50%, rgba(229,220,199,0.6) 50%),
                       linear-gradient(135deg, rgba(229,220,199,0.6) 50%, transparent 50%);
@@ -239,9 +289,37 @@
     background-size: 5px 5px, 5px 5px;
     background-repeat: no-repeat;
   }
-  #startArea:focus-visible, #carPick:focus-visible { outline: 2px solid var(--marigold); outline-offset: 2px; }
+  #driverName {
+    font-family: var(--mono); font-size: 13px;
+    background: rgba(14,22,19,0.9); color: var(--bone);
+    border: 1px solid rgba(229,220,199,0.28); border-radius: 2px;
+    padding: 10px 12px; width: 100%;
+    -webkit-appearance: none; appearance: none;
+  }
+  #driverName::placeholder { color: rgba(229,220,199,0.3); }
+  /* iOS Safari zooms the entire page in when you focus a field smaller than 16px,
+     and the zoom stays after the card closes -- which is what pushed the guide off
+     the top of the screen and cut the minimap and Finish in half. 16px on touch
+     keeps the page at 1:1 and costs nothing on desktop. */
+  @media (pointer: coarse) {
+    #driverName, #startArea, #destArea, #carPick { font-size: 16px; }
+  }
+  #startArea:focus-visible, #destArea:focus-visible, #carPick:focus-visible,
+  #driverName:focus-visible { outline: 2px solid var(--marigold); outline-offset: 2px; }
   #startArea option, #startArea optgroup,
+  #destArea option, #destArea optgroup,
   #carPick option { background: #0E1613; color: var(--bone); }
+  .field.wide { max-width: none; flex-basis: 100%; }
+  .tripLine {
+    font-size: 11.5px; line-height: 1.5; color: rgba(229,220,199,0.5);
+    font-variant-numeric: tabular-nums;
+  }
+  .tripLine b { color: var(--marigold); font-weight: 400; }
+  .startNote {
+    font-size: 11.5px; line-height: 1.55; color: var(--marigold);
+    border-left: 2px solid rgba(242,163,43,0.5); padding-left: 10px;
+  }
+  .startNote.bad { color: var(--flame); border-left-color: rgba(232,87,43,0.6); }
   .credit { font-size: 10px; color: rgba(229,220,199,0.32); line-height: 1.6; }
   .credit a { color: rgba(229,220,199,0.5); }
 
@@ -349,6 +427,17 @@
     font-size: 10px; color: var(--paper-dim); text-align: center; line-height: 1.5;
   }
 
+  /* The friend's own words — the only part of the receipt nothing measured. */
+  .receipt .wish {
+    font-family: var(--serif); font-size: 14.5px; line-height: 1.55;
+    text-align: center; white-space: pre-wrap; overflow-wrap: anywhere;
+    margin: 2px 0 6px; padding: 0 4px;
+  }
+  .receipt .signed {
+    font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--paper-dim); text-align: right;
+  }
+
   .lines { display: flex; flex-direction: column; gap: 6px; }
   .line { display: flex; justify-content: space-between; gap: 12px; font-size: 11px; }
   .line .k { letter-spacing: 0.13em; text-transform: uppercase; color: var(--paper-dim); }
@@ -382,19 +471,19 @@
   <div id="vignette"></div>
   <div id="flash"></div>
 
-  <div class="hud" id="placard">
-    <div class="city">Thiruvananthapuram</div>
-    <div class="street" id="streetName">&nbsp;</div>
-  </div>
+  <div class="hud" id="roadName" hidden></div>
 
   <div class="hud" id="minimap"><canvas id="mini"></canvas></div>
   <div class="hud" id="ticker"></div>
 
-  <div class="hud" id="discovery" hidden>
-    <div class="dCat"><span id="dCatText"></span><span id="dStar" hidden>★ notable</span></div>
-    <div class="dName" id="dName"></div>
-    <div class="dDesc" id="dDesc"></div>
-    <div class="dHours" id="dHours"></div>
+  <div class="hud" id="guide" hidden>
+    <div id="guideArrow">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.6 L20.4 21.6 L12 16.6 L3.6 21.6 Z"/></svg>
+    </div>
+    <div>
+      <div id="guideDist">—</div>
+      <div id="guideTurn">to the house</div>
+    </div>
   </div>
 
   <div class="hud" id="cluster">
@@ -426,6 +515,7 @@
 
   <div class="hud" id="actions">
     <button class="btn ghost icon" id="recenterBtn" title="Recentre and reset zoom">⌖</button>
+    <button class="btn ghost icon" id="compassBtn" title="Map turns as you drive">▲</button>
     <button class="btn ghost icon" id="soundBtn" aria-pressed="true" title="Sound on or off">♪</button>
     <button class="btn solid" id="finish">Finish &amp; print</button>
   </div>
@@ -439,39 +529,39 @@
 
   <div class="veil" id="titleVeil">
     <div id="titlecard">
-      <div class="eyebrow">A route is a story</div>
-      <h1>Trivandrum<br>Night Drive</h1>
+      <div class="eyebrow">Thiruvananthapuram, after dark</div>
+      <h1>Night<br>Drive</h1>
       <p>
-        Twenty-four kilometres of the real capital — Kazhakkoottam down to Kovalam —
-        extruded from OpenStreetMap footprints. No tiles, no navigation. Drive wherever
-        you like; the streets remember where you went and print you a receipt.
+        Pick where you start and where you're headed, follow the arrow, and drive.
+        What you do on the way prints as a receipt at the end.
       </p>
-      <div class="keys">
-        <span><kbd>W</kbd><kbd>↑</kbd> throttle</span>
-        <span><kbd>S</kbd><kbd>↓</kbd> brake / reverse</span>
-        <span><kbd>A</kbd><kbd>D</kbd> steer</span>
-        <span><kbd>R</kbd> back to the road</span>
-        <span><kbd>M</kbd> full map &amp; points</span>
-        <span><kbd>−</kbd><kbd>+</kbd> zoom (or scroll)</span>
-      </div>
       <div class="fields">
+        <label class="field">
+          <span class="fieldLabel">Your name</span>
+          <input id="driverName" type="text" maxlength="28" autocomplete="name"
+                 placeholder="who is driving?">
+        </label>
         <label class="field">
           <span class="fieldLabel">Start from</span>
           <select id="startArea"></select>
+        </label>
+        <label class="field">
+          <span class="fieldLabel">Drive to</span>
+          <select id="destArea"></select>
         </label>
         <label class="field">
           <span class="fieldLabel">Drive</span>
           <select id="carPick"></select>
         </label>
       </div>
+      <div class="tripLine" id="tripLine"></div>
       <div class="carStats" id="carStats"></div>
+      <div class="startNote" id="startNote" hidden></div>
       <div class="row">
-        <button class="btn solid" id="startBtn">Start my story</button>
+        <button class="btn solid" id="startBtn">Start driving</button>
       </div>
       <div class="credit">
-        Map data © OpenStreetMap contributors, ODbL. 2,386 points filtered to culture,
-        food, bakeries, shops, worship, hotels and green — banks, ATMs and clinics are
-        deliberately thrown away. 811 place and junction names, mostly from bus stops.
+        Distances are as the crow flies — the road always asks for more.
       </div>
     </div>
   </div>
@@ -493,6 +583,7 @@
         </div>
         <div id="poiList"></div>
         <button class="btn ghost" id="closeMap">Back to the car</button>
+        <button class="btn ghost" id="mapRestart">Start somewhere else</button>
       </aside>
     </div>
   </div>
@@ -504,6 +595,7 @@
       <div class="row">
         <button class="btn solid" id="againBtn">Drive again</button>
         <button class="btn ghost" id="keepBtn">Keep driving</button>
+        <button class="btn ghost" id="restartBtn">Start somewhere else</button>
       </div>
     </div>
   </div>
@@ -552,11 +644,15 @@
     return [x0, y0, x1, y1];
   }
 
-  var roads = DATA.roads.map(function (r) {
+  var roads = DATA.roads.map(function (r, i) {
     var p = decode(r.p);
-    return { c: r.c, n: r.n || null, ms: r.ms || 0, ow: !!r.ow, p: p, bb: bbox(p) };
+    return { c: r.c, n: r.n || null, ms: r.ms || 0, ow: !!r.ow, p: p, bb: bbox(p), oi: i };
   });
   roads.sort(function (a, b) { return ROAD_ORD[a.c] - ROAD_ORD[b.c]; });
+  // The sort above is paint order, so roads[] no longer lines up with DATA.roads.
+  // Graph edges cite the original index, hence this way back.
+  var roadByIndex = [];
+  roads.forEach(function (r) { roadByIndex[r.oi] = r; });
 
   var areas = DATA.areas.map(function (a) {
     var p = decode(a.p);
@@ -578,6 +674,240 @@
   var places = (DATA.places || []).map(function (p) {
     return { n: p.n, r: p.r, x: p.x * U, y: p.y * U };
   });
+
+  // ============================================================ routing
+  // Where this drive is headed. Chosen on the title screen, so it is mutable --
+  // everything that reads it (guide arrow, minimap pin, arrival ring, receipt)
+  // runs after a drive has started, by which point applyDest has set it.
+  var META = DATA.meta;
+  var DEST = { x: 0, y: 0, n: '' };
+  function setDest(x, y, name) { DEST.x = x; DEST.y = y; DEST.n = name || ''; }
+
+  // The graph route_graph.py emitted: flat node coords, 5 ints per edge.
+  // Built on the first route request rather than at load, so the title screen
+  // is not held up by work a driver may never ask for.
+  var gN = (DATA.graph || {}).n || [];
+  var gE = (DATA.graph || {}).e || [];
+  var gCount = gN.length / 2;
+  // Adjacency in CSR form: neighbours of node k live at [adjOff[k], adjOff[k+1]).
+  // The obvious array-of-arrays cost three seconds to build on 46k nodes, all of
+  // it allocation and regrowth; flat typed arrays do the same job in ~150 ms.
+  var adjOff = null, adjNode = null, adjCost = null, adjEdge = null, adjFwd = null;
+  var gGrid = null;
+  var GCELL = 300;
+
+  function edgeLen(ei) {
+    var a = gE[ei], b = gE[ei + 1], r = roadByIndex[gE[ei + 2]];
+    var v0 = gE[ei + 3], v1 = gE[ei + 4];
+    var px = gN[2 * a] * U, py = gN[2 * a + 1] * U, t = 0;
+    if (r) {
+      var last = r.p.length / 2 - 1, lo = v0 < 0 ? 0 : v0, hi = v1 > last ? last : v1;
+      for (var v = lo; v <= hi; v++) {
+        var x = r.p[2 * v], y = r.p[2 * v + 1];
+        t += Math.hypot(x - px, y - py); px = x; py = y;
+      }
+    }
+    return t + Math.hypot(gN[2 * b] * U - px, gN[2 * b + 1] * U - py);
+  }
+
+  // Geometry of one edge, walked from whichever end the route enters by.
+  function edgePts(ei, forward, out) {
+    var a = gE[ei], b = gE[ei + 1], r = roadByIndex[gE[ei + 2]];
+    var v0 = gE[ei + 3], v1 = gE[ei + 4], mid = [];
+    if (r) {
+      var last = r.p.length / 2 - 1, lo = v0 < 0 ? 0 : v0, hi = v1 > last ? last : v1;
+      for (var v = lo; v <= hi; v++) mid.push(r.p[2 * v], r.p[2 * v + 1]);
+    }
+    if (!forward) {
+      var f = [];
+      for (var i = mid.length - 2; i >= 0; i -= 2) f.push(mid[i], mid[i + 1]);
+      mid = f;
+      var s = a; a = b; b = s;
+    }
+    out.push(gN[2 * a] * U, gN[2 * a + 1] * U);
+    for (var k = 0; k < mid.length; k++) out.push(mid[k]);
+    out.push(gN[2 * b] * U, gN[2 * b + 1] * U);
+  }
+
+  function buildGraph() {
+    if (adjOff) return;
+    var i, a, b, r, p;
+    // 1. degree of every node — a one-way contributes only to its tail
+    var deg = new Int32Array(gCount);
+    for (i = 0; i < gE.length; i += 5) {
+      r = roadByIndex[gE[i + 2]];
+      deg[gE[i]]++;
+      if (!(r && r.ow)) deg[gE[i + 1]]++;            // one-way always points a->b
+    }
+    // 2. prefix sum into row offsets
+    adjOff = new Int32Array(gCount + 1);
+    for (i = 0; i < gCount; i++) adjOff[i + 1] = adjOff[i] + deg[i];
+    var total = adjOff[gCount];
+    adjNode = new Int32Array(total);
+    adjCost = new Float32Array(total);
+    adjEdge = new Int32Array(total);
+    adjFwd = new Uint8Array(total);
+    // 3. fill, using a moving write cursor per row
+    var cur = adjOff.slice(0, gCount);
+    for (i = 0; i < gE.length; i += 5) {
+      a = gE[i]; b = gE[i + 1]; r = roadByIndex[gE[i + 2]];
+      var w = edgeLen(i);
+      p = cur[a]++;
+      adjNode[p] = b; adjCost[p] = w; adjEdge[p] = i; adjFwd[p] = 1;
+      if (!(r && r.ow)) {
+        p = cur[b]++;
+        adjNode[p] = a; adjCost[p] = w; adjEdge[p] = i; adjFwd[p] = 0;
+      }
+    }
+    gGrid = new Map();
+    for (i = 0; i < gCount; i++) {
+      var k = Math.floor(gN[2 * i] * U / GCELL) * 100000 + Math.floor(gN[2 * i + 1] * U / GCELL);
+      var c = gGrid.get(k);
+      if (!c) { c = []; gGrid.set(k, c); }
+      c.push(i);
+    }
+  }
+
+  function nearestNode(x, y) {
+    buildGraph();
+    for (var ring = 0; ring < 40; ring++) {
+      var best = -1, bd = Infinity;
+      var cx = Math.floor(x / GCELL), cy = Math.floor(y / GCELL);
+      for (var ix = cx - ring; ix <= cx + ring; ix++) {
+        for (var iy = cy - ring; iy <= cy + ring; iy++) {
+          // only the new ring, not the filled square
+          if (ring && Math.abs(ix - cx) !== ring && Math.abs(iy - cy) !== ring) continue;
+          var c = gGrid.get(ix * 100000 + iy);
+          if (!c) continue;
+          for (var j = 0; j < c.length; j++) {
+            var n = c[j], d = Math.hypot(gN[2 * n] * U - x, gN[2 * n + 1] * U - y);
+            if (d < bd) { bd = d; best = n; }
+          }
+        }
+      }
+      if (best >= 0) return best;
+    }
+    return -1;
+  }
+
+  // Binary heap keyed on f-score; plain arrays beat a Map here by a wide margin.
+  function Heap() { this.k = []; this.v = []; }
+  Heap.prototype.push = function (key, val) {
+    var k = this.k, v = this.v, i = k.length;
+    k.push(key); v.push(val);
+    while (i > 0) {
+      var p = (i - 1) >> 1;
+      if (k[p] <= k[i]) break;
+      var tk = k[p]; k[p] = k[i]; k[i] = tk;
+      var tv = v[p]; v[p] = v[i]; v[i] = tv;
+      i = p;
+    }
+  };
+  Heap.prototype.pop = function () {
+    var k = this.k, v = this.v, top = v[0], last = k.length - 1;
+    k[0] = k[last]; v[0] = v[last]; k.pop(); v.pop();
+    var i = 0, n = k.length;
+    for (;;) {
+      var l = 2 * i + 1, r = l + 1, s = i;
+      if (l < n && k[l] < k[s]) s = l;
+      if (r < n && k[r] < k[s]) s = r;
+      if (s === i) break;
+      var tk = k[s]; k[s] = k[i]; k[i] = tk;
+      var tv = v[s]; v[s] = v[i]; v[i] = tv;
+      i = s;
+    }
+    return top;
+  };
+
+  // A* from the node nearest (sx,sy) to the node nearest (tx,ty).
+  function findRoute(sx, sy, tx, ty) {
+    buildGraph();
+    var s = nearestNode(sx, sy), t = nearestNode(tx, ty);
+    if (s < 0 || t < 0) return null;
+    var goalX = gN[2 * t] * U, goalY = gN[2 * t + 1] * U;
+    var best = new Float64Array(gCount).fill(Infinity);
+    var fromN = new Int32Array(gCount).fill(-1);
+    var fromE = new Int32Array(gCount).fill(-1);
+    var fromF = new Uint8Array(gCount);
+    var done = new Uint8Array(gCount);
+    var q = new Heap();
+    best[s] = 0;
+    q.push(Math.hypot(goalX - sx, goalY - sy), s);
+    var guard = 0;
+    while (q.k.length) {
+      var k = q.pop();
+      if (k === t) break;
+      if (done[k]) continue;
+      done[k] = 1;
+      if (++guard > 400000) break;            // never hang the frame loop
+      for (var i = adjOff[k], end = adjOff[k + 1]; i < end; i++) {
+        var nb = adjNode[i], ng = best[k] + adjCost[i];
+        if (ng < best[nb]) {
+          best[nb] = ng;
+          fromN[nb] = k; fromE[nb] = adjEdge[i]; fromF[nb] = adjFwd[i];
+          q.push(ng + Math.hypot(goalX - gN[2 * nb] * U, goalY - gN[2 * nb + 1] * U), nb);
+        }
+      }
+    }
+    if (best[t] === Infinity) return null;
+
+    var chain = [];
+    for (var c = t; c !== s && fromN[c] >= 0; c = fromN[c]) chain.push(c);
+    chain.reverse();
+    var pts = [];
+    for (var j = 0, cur = s; j < chain.length; j++) {
+      var n = chain[j];
+      var tmp = [];
+      edgePts(fromE[n], fromF[n], tmp);
+      // drop the duplicated joint between consecutive edges
+      for (var m = pts.length ? 2 : 0; m < tmp.length; m++) pts.push(tmp[m]);
+      cur = n;
+    }
+    return { pts: pts, len: best[t], from: [sx, sy], to: [tx, ty] };
+  }
+
+  // Distance still to drive, measured along the route from the nearest point on
+  // it -- not the crow line, which would tick down while you sit at a junction.
+  function routeProgress(route, x, y) {
+    var p = route.pts, bi = 0, bt = 0, bd = Infinity;
+    for (var i = 0; i + 3 < p.length; i += 2) {
+      var x0 = p[i], y0 = p[i + 1], dx = p[i + 2] - x0, dy = p[i + 3] - y0;
+      var L = dx * dx + dy * dy, t = L ? ((x - x0) * dx + (y - y0) * dy) / L : 0;
+      t = t < 0 ? 0 : t > 1 ? 1 : t;
+      var d = Math.hypot(x - (x0 + t * dx), y - (y0 + t * dy));
+      if (d < bd) { bd = d; bi = i; bt = t; }
+    }
+    var rem = 0;
+    var jx = p[bi] + bt * (p[bi + 2] - p[bi]), jy = p[bi + 1] + bt * (p[bi + 3] - p[bi + 1]);
+    rem += Math.hypot(p[bi + 2] - jx, p[bi + 3] - jy);
+    for (var k = bi + 2; k + 3 < p.length; k += 2) {
+      rem += Math.hypot(p[k + 2] - p[k], p[k + 3] - p[k + 1]);
+    }
+    return { off: bd, rem: rem, i: bi, t: bt, x: jx, y: jy };
+  }
+
+  // The next real manoeuvre: walk ahead accumulating heading change and report
+  // the first place the road turns by more than a lane-shift.
+  function nextTurn(route, prog) {
+    var p = route.pts, run = 0;
+    var px = prog.x, py = prog.y;
+    for (var i = prog.i + 2; i + 3 < p.length; i += 2) {
+      run += Math.hypot(p[i] - px, p[i + 1] - py);
+      px = p[i]; py = p[i + 1];
+      if (run > 900) break;
+      var ax = p[i] - p[i - 2], ay = p[i + 1] - p[i - 1];
+      var bx = p[i + 2] - p[i], by = p[i + 3] - p[i + 1];
+      var la = Math.hypot(ax, ay), lb = Math.hypot(bx, by);
+      if (la < 4 || lb < 4) continue;
+      var cross = (ax * by - ay * bx) / (la * lb);
+      var dot = (ax * bx + ay * by) / (la * lb);
+      var ang = Math.atan2(cross, dot);
+      if (Math.abs(ang) > 0.55) {
+        return { dist: run, dir: ang > 0 ? 'left' : 'right', sharp: Math.abs(ang) > 1.9 };
+      }
+    }
+    return null;
+  }
 
   // ---- uniform grid ------------------------------------------------
   var CELL = 250, grid = new Map();
@@ -770,6 +1100,48 @@
     ticker.innerHTML = '';
     elapsed = 0;
     startedAt = performance.now();
+    WISH.arrived = false;
+    WISH.printed = false;
+    WISH.closest = Infinity;
+    lastGuide = '';
+    if (elGuide) elGuide.classList.remove('arrived', 'close');
+    planRoute();
+  }
+
+  // ---- the drive home ---------------------------------------------
+  var WISH = {
+    name: '', route: null, arrived: false,
+    closest: Infinity, startedFrom: '', strayed: 0, guideTick: 0
+  };
+  var ARRIVE_R = 45;              // metres from the destination that counts as arrival
+
+  function planRoute() {
+    WISH.route = findRoute(car.x, car.y, DEST.x, DEST.y);
+    WISH.strayed = 0;
+    return WISH.route;
+  }
+
+  // Re-plan when they have been well off the line for a couple of seconds --
+  // long enough that a wide corner or a wrong lane does not trigger it.
+  function trackRoute(dt) {
+    if (!WISH.route) return null;
+    var pr = routeProgress(WISH.route, car.x, car.y);
+    var toDest = Math.hypot(DEST.x - car.x, DEST.y - car.y);
+    if (toDest < WISH.closest) WISH.closest = toDest;
+    if (toDest < ARRIVE_R) WISH.arrived = true;
+    // Leaving the destination re-arms the receipt, so "keep driving" does not
+    // print again the instant the car rolls to a stop.
+    else if (toDest > ARRIVE_R * 2.5) { WISH.arrived = false; WISH.printed = false; }
+    if (pr.off > 70) {
+      WISH.strayed += dt;
+      if (WISH.strayed > 2) {
+        planRoute();
+        return WISH.route ? routeProgress(WISH.route, car.x, car.y) : null;
+      }
+    } else {
+      WISH.strayed = 0;
+    }
+    return pr;
   }
 
   // ============================================================ input
@@ -778,7 +1150,23 @@
     ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down',
     ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right'
   };
+  // A keystroke aimed at a text box is a character, never a control. Without this
+  // the name field silently eats a, d, w and s to steering, r to respawn, m to the
+  // map and Tab to the map too -- and because each one calls preventDefault, the
+  // letter never reaches the input at all.
+  function typingInto(e) {
+    var t = e.target;
+    if (!t) return false;
+    var tag = t.tagName;
+    return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || t.isContentEditable;
+  }
+  // Nothing to drive while the title card or the receipt is up, either.
+  function keysIdle() {
+    return (titleVeil && !titleVeil.hidden) || (receiptVeil && !receiptVeil.hidden);
+  }
+
   addEventListener('keydown', function (e) {
+    if (typingInto(e) || keysIdle()) return;
     if (e.code === 'KeyR') { respawn(); return; }
     if (e.code === 'KeyM' || e.code === 'Tab') { toggleMap(); e.preventDefault(); return; }
     if (e.code === 'Escape') { closeMap(); return; }
@@ -788,6 +1176,7 @@
     if (k) { keys[k] = true; e.preventDefault(); }
   });
   addEventListener('keyup', function (e) {
+    if (typingInto(e)) return;
     var k = CODES[e.code];
     if (k) { keys[k] = false; e.preventDefault(); }
   });
@@ -1045,12 +1434,13 @@
     for (var i = 0; i < near.length; i++) {
       var l = near[i];
       if (l.got) continue;
-      if (Math.hypot(l.x - car.x, l.y - car.y) < 48) {
+      // 48 m meant threading the needle at speed; 64 m makes a drive down a lit
+      // street actually collect the street.
+      if (Math.hypot(l.x - car.x, l.y - car.y) < 64) {
         l.got = true; l.flare = 1;
         collected.push({ n: l.n, k: l.k, at: car.dist });
         blip(l.w ? 880 : 784, 0.4, 0.10);
         setTimeout(function () { blip(l.w ? 1319 : 1175, 0.5, 0.075); }, 90);
-        showCard(l);
         var el = document.createElement('div');
         el.className = 'tick';
         el.innerHTML = '<span class="cat">' + CAT_LABEL[l.k] + '</span>' + esc(l.n);
@@ -1060,24 +1450,9 @@
       }
     }
   }
-  // Brief card on discovery. Re-triggering restarts the animation and the timer,
-  // so a run of quick finds reads as one moving card rather than a pile-up.
-  var elCard = document.getElementById('discovery');
-  var cardTimer = null;
-  function showCard(l) {
-    document.getElementById('dCatText').textContent = CAT_LABEL[l.k] || l.k;
-    var star = document.getElementById('dStar');
-    star.hidden = !l.w;
-    document.getElementById('dName').textContent = l.n;
-    document.getElementById('dDesc').textContent = l.d || '';
-    document.getElementById('dHours').textContent = l.h ? 'Open ' + l.h : '';
-    elCard.hidden = false;
-    elCard.style.animation = 'none';
-    void elCard.offsetWidth;
-    elCard.style.animation = '';
-    clearTimeout(cardTimer);
-    cardTimer = setTimeout(function () { elCard.hidden = true; }, l.w ? 6200 : 4600);
-  }
+  // The discovery card used to pop up here. It landed bottom-centre, which on a
+  // phone is exactly where the brake and throttle live, so it covered the controls
+  // it interrupted. The find now reads as the coloured burst on the map itself.
 
   function esc(s) {
     return String(s).replace(/[&<>"]/g, function (c) {
@@ -1109,17 +1484,108 @@
     });
   })();
 
+  // ============================================================ compass
+  // Heading-up driving: turn the phone and the map turns under you, so the road
+  // ahead is the road at the top of the screen. Sensor only — a desktop has
+  // nothing to read, so the button never appears there.
+  // Three ways to hold the map, cycled by the button:
+  //   north — fixed, the way a paper map lies
+  //   car   — the road ahead is up, which is what every nav app does and what
+  //           driving with on-screen pedals actually wants
+  //   phone — the real compass, only honest if you are out in the city yourself
+  // Phone-up was the first attempt and reads as wrong indoors: the world swings
+  // whenever you turn the handset, which has nothing to do with where you steer.
+  var viewRot = 0;                        // screen-space rotation, radians
+  var ROT_LABEL = { north: 'Map faces north', car: 'Map turns as you drive', phone: 'Map follows the phone' };
+  var ROT_GLYPH = { north: 'N', car: '▲', phone: '◈' };
+  var rotMode = 'car';
+  var compass = { target: 0, live: false, asked: false };
+
+  function compassCapable() {
+    return typeof DeviceOrientationEvent !== 'undefined' &&
+           ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+  }
+
+  function onOrient(e) {
+    var head = null;
+    if (typeof e.webkitCompassHeading === 'number' && !isNaN(e.webkitCompassHeading)) {
+      head = e.webkitCompassHeading;      // iOS: degrees clockwise from north
+    } else if (e.absolute && typeof e.alpha === 'number' && e.alpha !== null) {
+      head = 360 - e.alpha;               // the spec's alpha runs anticlockwise
+    }
+    if (head === null) return;            // relative-only reading is useless as a compass
+    compass.live = true;
+    compass.target = -head * Math.PI / 180;
+  }
+
+  function listenOrient() {
+    addEventListener('deviceorientationabsolute', onOrient, true);
+    addEventListener('deviceorientation', onOrient, true);
+  }
+
+  // iOS 13+ gates the sensor behind a permission call that must come from a tap.
+  // iOS 13+ gates the sensor behind a permission call that must come from a tap.
+  function enableCompass() {
+    if (compass.asked) return;
+    compass.asked = true;
+    var D = window.DeviceOrientationEvent;
+    if (D && typeof D.requestPermission === 'function') {
+      D.requestPermission().then(function (state) {
+        if (state === 'granted') listenOrient();
+      }).catch(function () {});
+      return;
+    }
+    listenOrient();
+  }
+
+  function cycleRot() {
+    var order = compassCapable() ? ['north', 'car', 'phone'] : ['north', 'car'];
+    rotMode = order[(order.indexOf(rotMode) + 1) % order.length];
+    if (rotMode === 'phone') enableCompass();
+    syncCompassBtn();
+  }
+
+  function syncCompassBtn() {
+    var b = document.getElementById('compassBtn');
+    if (!b) return;
+    b.hidden = false;
+    b.textContent = ROT_GLYPH[rotMode];
+    b.title = ROT_LABEL[rotMode];
+    b.setAttribute('aria-label', ROT_LABEL[rotMode]);
+    b.classList.toggle('off', rotMode === 'north');
+  }
+
+  // Ease toward the wanted heading the short way round the circle, so crossing
+  // north does not send the world spinning the long way.
+  function stepCompass(dt) {
+    var want = 0;
+    if (rotMode === 'car') want = car.h - Math.PI / 2;
+    else if (rotMode === 'phone' && compass.live) want = compass.target;
+    var d = want - viewRot;
+    while (d > Math.PI) d -= 2 * Math.PI;
+    while (d < -Math.PI) d += 2 * Math.PI;
+    if (Math.abs(d) < 0.0015) { viewRot = want; return; }
+    // the car reads as sluggish if the view lags it, the phone as jittery if it does not
+    viewRot += d * (1 - Math.pow(rotMode === 'car' ? 0.004 : 0.06, dt));
+    if (viewRot > Math.PI) viewRot -= 2 * Math.PI;
+    if (viewRot < -Math.PI) viewRot += 2 * Math.PI;
+  }
+
   function draw() {
     ctx.fillStyle = '#080B12';
     ctx.fillRect(0, 0, W, H);
 
     var s = cam.scale;
     var halfW = W / (2 * s), halfH = H / (2 * s);
+    // A rotated view sweeps the corners of the viewport through the world, so the
+    // cull box has to grow to the circumscribed square or the map tears at the edge.
+    if (viewRot) halfW = halfH = Math.hypot(halfW, halfH);
     var x0 = cam.x - halfW - 60, x1 = cam.x + halfW + 60;
     var y0 = cam.y - halfH - 60, y1 = cam.y + halfH + 60;
 
     ctx.save();
     ctx.translate(W / 2, H / 2);
+    if (viewRot) ctx.rotate(viewRot);   // screen-space, before the y flip
     ctx.scale(s, -s);            // y-up world
     ctx.translate(-cam.x, -cam.y);
 
@@ -1209,6 +1675,44 @@
       ctx.globalCompositeOperation = 'source-over';
     }
 
+    // --- route home
+    // Drawn under the trail, and cool against its marigold, so at a glance you can
+    // tell the way you should go from the way you have been. Segments outside the
+    // view are skipped rather than clipped: a 26 km route is a few thousand points
+    // and only a handful are ever on screen.
+    if (WISH.route && !WISH.arrived) {
+      var rp = WISH.route.pts, open = false;
+      ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+      ctx.beginPath();
+      for (i = 0; i + 3 < rp.length; i += 2) {
+        var ax = rp[i], ay = rp[i + 1], bx = rp[i + 2], by = rp[i + 3];
+        if (Math.max(ax, bx) < x0 || Math.min(ax, bx) > x1 ||
+            Math.max(ay, by) < y0 || Math.min(ay, by) > y1) { open = false; continue; }
+        if (!open) { ctx.moveTo(ax, ay); open = true; }
+        ctx.lineTo(bx, by);
+      }
+      ctx.strokeStyle = 'rgba(53,223,255,0.18)';
+      ctx.lineWidth = 9;
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(53,223,255,0.85)';
+      ctx.lineWidth = 2.2;
+      ctx.stroke();
+    }
+
+    // --- the door
+    if (DEST.x > x0 - 60 && DEST.x < x1 + 60 && DEST.y > y0 - 60 && DEST.y < y1 + 60) {
+      var pulse = 0.55 + 0.45 * Math.sin(performance.now() / 380);
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.fillStyle = 'rgba(67,227,154,' + (0.16 * pulse).toFixed(3) + ')';
+      ctx.beginPath(); ctx.arc(DEST.x, DEST.y, 26, 0, 6.2832); ctx.fill();
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.fillStyle = '#43E39A';
+      ctx.beginPath(); ctx.arc(DEST.x, DEST.y, 3.4, 0, 6.2832); ctx.fill();
+      ctx.strokeStyle = 'rgba(67,227,154,0.8)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.arc(DEST.x, DEST.y, ARRIVE_R, 0, 6.2832); ctx.stroke();
+    }
+
     // --- trail
     if (trail.length > 1) {
       ctx.lineJoin = 'round'; ctx.lineCap = 'round';
@@ -1240,8 +1744,13 @@
       vPlaces.push(pl);
     }
     vPlaces.sort(function (a, b) { return b.r - a.r; });
-    var placeBoxes = [];
-    for (i = 0; i < vPlaces.length && placeBoxes.length < 16; i++) {
+    // Labels are placed by de-confliction against boxes already taken, so the
+    // tidiest way to stop a name printing across the bonnet is to declare the
+    // car one of those boxes before any of them are laid down.
+    var carScr = toScreen(car.x, car.y, s);
+    var carKeepOut = [carScr[0] - 34, carScr[1] - 26, carScr[0] + 34, carScr[1] + 26];
+    var placeBoxes = [carKeepOut];
+    for (i = 0; i < vPlaces.length && placeBoxes.length < 17; i++) {
       var pv = vPlaces[i];
       var ps = toScreen(pv.x, pv.y, s);
       var fs = pv.r >= 4 ? 24 : pv.r === 3 ? 20 : pv.r === 2 ? 16 : 13;
@@ -1271,8 +1780,9 @@
       var p = toScreen(l.x, l.y, s);
       var sprite = glowSprite[l.k];
       if (!sprite) continue;
-      var rad = l.got ? 30 : 19;
-      ctx.globalAlpha = l.got ? 1 : 0.62;
+      // Unlit signs read as targets, lit ones as trophies, so widen the gap.
+      var rad = l.got ? 34 : 21;
+      ctx.globalAlpha = l.got ? 1 : 0.74;
       ctx.drawImage(sprite, p[0] - rad, p[1] - rad, rad * 2, rad * 2);
     }
     ctx.globalAlpha = 1;
@@ -1283,11 +1793,28 @@
       var p = toScreen(l.x, l.y, s);
       var got = l.got;
 
+      // Two rings a beat apart, in the sign's own colour, over an additive bloom.
+      // One thin white ring for a third of a second was too easy to drive past.
       if (l.flare > 0) {
-        ctx.beginPath();
-        ctx.arc(p[0], p[1], 6 + (1 - l.flare) * 34, 0, 6.2832);
-        ctx.strokeStyle = 'rgba(255,255,255,' + (l.flare * 0.8).toFixed(3) + ')';
-        ctx.lineWidth = 1.6; ctx.stroke();
+        var f = l.flare, neon = NEON[l.k] || '#FFFFFF';
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.fillStyle = neon;
+        ctx.globalAlpha = f * f * 0.5;
+        ctx.beginPath(); ctx.arc(p[0], p[1], 10 + (1 - f) * 16, 0, 6.2832); ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.globalCompositeOperation = 'source-over';
+
+        ctx.strokeStyle = neon;
+        ctx.globalAlpha = f * 0.9;
+        ctx.lineWidth = 2.2;
+        ctx.beginPath(); ctx.arc(p[0], p[1], 7 + (1 - f) * 46, 0, 6.2832); ctx.stroke();
+        var f2 = f - 0.28;                       // trailing ring
+        if (f2 > 0) {
+          ctx.globalAlpha = f2 * 0.55;
+          ctx.lineWidth = 1.4;
+          ctx.beginPath(); ctx.arc(p[0], p[1], 7 + (1 - f2) * 30, 0, 6.2832); ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
       }
 
       ctx.beginPath();
@@ -1313,7 +1840,7 @@
       if (a[0].got !== b[0].got) return a[0].got ? -1 : 1;
       return a[1] - b[1];
     });
-    var lblBoxes = [];
+    var lblBoxes = [carKeepOut];        // the car keeps its own space here too
     for (i = 0; i < cands.length; i++) {
       var lb = cands[i][0], dS2 = cands[i][1];
       var sp2 = toScreen(lb.x, lb.y, s);
@@ -1348,8 +1875,13 @@
     }
   }
 
+  // Must mirror the transform in draw() exactly: labels are drawn in screen space
+  // after the world transform is popped, so they stay upright while the map turns.
   function toScreen(wx, wy, s) {
-    return [W / 2 + (wx - cam.x) * s, H / 2 - (wy - cam.y) * s];
+    var X = (wx - cam.x) * s, Y = -(wy - cam.y) * s;
+    if (!viewRot) return [W / 2 + X, H / 2 + Y];
+    var ca = Math.cos(viewRot), sa = Math.sin(viewRot);
+    return [W / 2 + X * ca - Y * sa, H / 2 + X * sa + Y * ca];
   }
   function tracePoly(p, ox, oy) {
     ox = ox || 0; oy = oy || 0;
@@ -1378,27 +1910,61 @@
     path.closePath();
   }
 
+  var CAR_SHAPE = { scooter: 'bike', auto: 'auto' };   // everything else is a car
+
   function drawCar(s) {
     var p = toScreen(car.x, car.y, s);
     ctx.save();
     ctx.translate(p[0], p[1]);
-    ctx.rotate(-car.h);
+    ctx.rotate(-car.h + viewRot);       // screen space, so it must follow the view
     // True scale until the body drops under ~16 px, then grow it just enough to stay
     // readable. Scaling length and width by the same factor keeps each vehicle's
     // proportions, and at this floor even the auto still sits inside a lane.
     var pxLen = CAR.len * s;
-    var boost = pxLen < 16 ? 16 / pxLen : 1;
+    // One boost for every vehicle, taken off a common reference length. Deriving
+    // it per-car pinned them all to exactly the same 16 px, so picking the scooter
+    // changed the colour and nothing else -- a scooter drew as long as an Ambassador.
+    var refPx = 3.0 * s;
+    var boost = refPx < 15 ? 15 / refPx : 1;
     var L = pxLen * boost, Wd = CAR.wid * s * boost;
 
     ctx.fillStyle = 'rgba(0,0,0,0.5)';
     ctx.fillRect(-L / 2 + 1.5, -Wd / 2 + 1.5, L, Wd);
 
-    ctx.fillStyle = CAR.body;
-    ctx.fillRect(-L / 2, -Wd / 2, L, Wd);
-    ctx.fillStyle = CAR.roof;                        // cabin
-    ctx.fillRect(-L * 0.10, -Wd / 2, L * 0.36, Wd);
-    ctx.fillStyle = CAR.trim;                        // windscreen band
-    ctx.fillRect(L * 0.20, -Wd / 2, Math.max(1, L * 0.07), Wd);
+    // A silhouette each, or picking a scooter only ever changed the colour. These
+    // are 10-25 px on screen, so the shapes are cut for the outline: the auto
+    // tapers to its single front wheel, the scooter is a deck with a rider on it.
+    var shape = CAR_SHAPE[CAR.id] || 'car';
+    if (shape === 'bike') {
+      ctx.fillStyle = CAR.trim;                      // wheels fore and aft
+      ctx.fillRect(L * 0.26, -Wd * 0.5, Math.max(1.2, L * 0.20), Wd);
+      ctx.fillRect(-L * 0.50, -Wd * 0.5, Math.max(1.2, L * 0.20), Wd);
+      ctx.fillStyle = CAR.body;                      // deck, narrower than the wheels
+      ctx.fillRect(-L / 2, -Wd * 0.32, L, Wd * 0.64);
+      ctx.fillStyle = CAR.roof;                      // rider
+      ctx.beginPath();
+      ctx.arc(-L * 0.06, 0, Math.max(1.3, Wd * 0.60), 0, 6.2832);
+      ctx.fill();
+    } else if (shape === 'auto') {
+      ctx.fillStyle = CAR.body;                      // wedge: one wheel front, bench back
+      ctx.beginPath();
+      ctx.moveTo(L / 2, -Wd * 0.26);
+      ctx.lineTo(L / 2, Wd * 0.26);
+      ctx.lineTo(-L / 2, Wd / 2);
+      ctx.lineTo(-L / 2, -Wd / 2);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = CAR.roof;                      // black canopy
+      ctx.fillRect(-L * 0.46, -Wd * 0.42, L * 0.62, Wd * 0.84);
+      ctx.fillStyle = CAR.trim;
+      ctx.fillRect(L * 0.10, -Wd * 0.26, Math.max(1, L * 0.08), Wd * 0.52);
+    } else {
+      ctx.fillStyle = CAR.body;
+      ctx.fillRect(-L / 2, -Wd / 2, L, Wd);
+      ctx.fillStyle = CAR.roof;                      // cabin
+      ctx.fillRect(-L * 0.10, -Wd / 2, L * 0.36, Wd);
+      ctx.fillStyle = CAR.trim;                      // windscreen band
+      ctx.fillRect(L * 0.20, -Wd / 2, Math.max(1, L * 0.07), Wd);
+    }
 
     // headlight cone
     var gg = ctx.createLinearGradient(L / 2, 0, L / 2 + 60, 0);
@@ -1493,6 +2059,28 @@
 
     mctx.setTransform(d, 0, 0, d, 0, 0);
     var half = MINI_PX / 2, f = MINI_PX / MINI_WIN;
+    if (WISH.route && !WISH.arrived) {
+      var rp = WISH.route.pts;
+      mctx.strokeStyle = 'rgba(53,223,255,0.75)'; mctx.lineWidth = 1.6;
+      mctx.lineJoin = 'round'; mctx.lineCap = 'round';
+      mctx.beginPath();
+      mctx.moveTo(half + (rp[0] - car.x) * f, half - (rp[1] - car.y) * f);
+      for (var q = 2; q + 1 < rp.length; q += 2) {
+        mctx.lineTo(half + (rp[q] - car.x) * f, half - (rp[q + 1] - car.y) * f);
+      }
+      mctx.stroke();
+    }
+    // the door, clamped to the minimap edge so it still tells you which way to look
+    var hx = half + (DEST.x - car.x) * f, hy = half - (DEST.y - car.y) * f;
+    var m = 6, cl = hx < m || hx > MINI_PX - m || hy < m || hy > MINI_PX - m;
+    hx = Math.max(m, Math.min(MINI_PX - m, hx));
+    hy = Math.max(m, Math.min(MINI_PX - m, hy));
+    mctx.beginPath(); mctx.arc(hx, hy, cl ? 2.6 : 3.6, 0, 6.2832);
+    mctx.fillStyle = '#43E39A'; mctx.fill();
+    if (!cl) {
+      mctx.strokeStyle = 'rgba(67,227,154,0.55)'; mctx.lineWidth = 1;
+      mctx.beginPath(); mctx.arc(hx, hy, 7, 0, 6.2832); mctx.stroke();
+    }
     if (trail.length > 1) {
       mctx.strokeStyle = '#F2A32B'; mctx.lineWidth = 1.8;
       mctx.lineJoin = 'round'; mctx.lineCap = 'round';
@@ -1791,9 +2379,64 @@
       elDist = document.getElementById('dist'),
       elClock = document.getElementById('clock'),
       elLm = document.getElementById('lmCount'),
-      elStreet = document.getElementById('streetName'),
+      elStreet = document.getElementById('roadName'),
       elSurface = document.getElementById('surface'),
-      elLimit = document.getElementById('limit');
+      elLimit = document.getElementById('limit'),
+      elGuide = document.getElementById('guide'),
+      elGuideArrow = document.querySelector('#guideArrow svg'),
+      elGuideDist = document.getElementById('guideDist'),
+      elGuideTurn = document.getElementById('guideTurn');
+
+  function fmtM(m) {
+    return m >= 1000 ? (m / 1000).toFixed(m < 10000 ? 2 : 1) + ' km'
+                     : Math.max(0, Math.round(m / 10) * 10) + ' m';
+  }
+
+  // World angle (anticlockwise from +x) to degrees clockwise from the top of the
+  // screen, which is what a CSS rotate() wants — and it has to follow the map
+  // when the compass turns the view, or the arrow points at the wrong street.
+  function screenBearing(worldAngle) {
+    return 90 - worldAngle * 180 / Math.PI + viewRot * 180 / Math.PI;
+  }
+
+  // The arrow points along the route where there is one, and straight at the
+  // destination when there is not -- an arrow into a wall is worse than no arrow.
+  var lastGuide = '';
+  function guide(dt, pr) {
+    if (!WISH.arrived && !pr) {
+      var b = Math.atan2(DEST.y - car.y, DEST.x - car.x);
+      elGuideArrow.style.transform = 'rotate(' + screenBearing(b) + 'deg)';
+      elGuideDist.textContent = fmtM(Math.hypot(DEST.x - car.x, DEST.y - car.y));
+      if (lastGuide !== 'direct') { lastGuide = 'direct'; elGuideTurn.textContent = 'straight line — no road found'; }
+      return;
+    }
+    if (WISH.arrived) {
+      elGuide.classList.add('arrived');
+      elGuideDist.textContent = 'You are here';
+      if (lastGuide !== 'done') { lastGuide = 'done'; elGuideTurn.textContent = 'stop and finish to sign the receipt'; }
+      elGuideArrow.style.transform = 'rotate(0deg)';
+      return;
+    }
+    // aim at a point a little way down the route so the arrow leads, not lags
+    var p = WISH.route.pts, ax = p[p.length - 2], ay = p[p.length - 1], run = 0;
+    for (var i = pr.i + 2; i + 1 < p.length; i += 2) {
+      run += Math.hypot(p[i] - p[i - 2], p[i + 1] - p[i - 1]);
+      if (run > 45) { ax = p[i]; ay = p[i + 1]; break; }
+    }
+    var br = Math.atan2(ay - car.y, ax - car.x);
+    elGuideArrow.style.transform = 'rotate(' + screenBearing(br) + 'deg)';
+    elGuideDist.textContent = fmtM(pr.rem);
+    elGuide.classList.toggle('close', pr.rem < 400);
+
+    WISH.guideTick -= dt;
+    if (WISH.guideTick > 0) return;
+    WISH.guideTick = 0.35;
+    var t = nextTurn(WISH.route, pr), msg;
+    if (pr.rem < 90) msg = 'it is right there';
+    else if (!t) msg = 'keep going';
+    else msg = (t.sharp ? 'sharp ' : '') + t.dir + ' in ' + fmtM(t.dist);
+    if (msg !== lastGuide) { lastGuide = msg; elGuideTurn.textContent = msg; }
+  }
 
   var streetTick = 0, curStreet = '', lastLimStr = '';
   function hud(dt) {
@@ -1817,7 +2460,12 @@
     if (streetTick <= 0) {
       streetTick = 0.45;
       var n = nearestNamedRoad(car.x, car.y);
-      if (n !== curStreet) { curStreet = n; elStreet.textContent = n || '—'; }
+      // Unnamed lanes are most of the city, and an em dash sitting there tells you
+      // nothing; the line just goes away until there is a name worth printing.
+      if (n !== curStreet) {
+        curStreet = n;
+        if (elStreet) { elStreet.textContent = n || ''; elStreet.hidden = !n; }
+      }
     }
   }
 
@@ -1987,12 +2635,17 @@
     cam.scale += (targetScale - cam.scale) * (1 - Math.pow(0.15, dt));
 
     for (var i = 0; i < landmarks.length; i++) {
-      if (landmarks[i].flare > 0) landmarks[i].flare = Math.max(0, landmarks[i].flare - dt * 1.6);
+      if (landmarks[i].flare > 0) landmarks[i].flare = Math.max(0, landmarks[i].flare - dt * 0.7);
     }
+
+    var pr = running ? trackRoute(dt) : null;
+    stepCompass(dt);
 
     draw();
     drawMini();
     hud(dt);
+    guide(dt, pr);
+    if (WISH.arrived && running && Math.abs(car.v) < 1.2) arrive();
   }
 
   // ============================================================ story generation
@@ -2128,23 +2781,39 @@
         }).join('')
       : '<div class="none">Nothing on the curated list. You found the quiet part of town.</div>';
 
+    var who = WISH.name || 'Someone';
+    var arrived = WISH.arrived;
+    var short = WISH.closest === Infinity ? 0 : WISH.closest;
+
+    // The one written line on the receipt, and it turns entirely on whether they
+    // reached the door. Everything under it is measured.
+    var where = DEST.n || 'the far side of town';
+    var story = arrived
+      ? who + ' drove ' + (f.dist / 1000).toFixed(1) + ' km across Trivandrum to ' + where + '.'
+      : who + ' set out for ' + where + ' and got within ' + fmtM(short) + ' of it.';
+
     var r = document.getElementById('receipt');
     r.innerHTML =
       '<div class="head">' +
-        '<div class="mark">Journey receipt</div>' +
-        '<div class="where">Thiruvananthapuram</div>' +
+        '<div class="mark">Night Drive</div>' +
+        '<div class="where">' + (arrived ? 'Arrived' : 'Stopped short') + '</div>' +
         '<div class="when">' + esc(when) + '</div>' +
       '</div>' +
       '<div class="rule"></div>' +
-      '<div class="story">' + esc(title) + '</div>' +
+      '<div class="story">' + esc(story) + '</div>' +
       '<div class="sub">' +
-        (f.endStreet ? 'finishing on ' + esc(f.endStreet) : 'somewhere off the named grid') +
+        (f.endStreet ? 'stopped on ' + esc(f.endStreet) : 'stopped off the named grid') +
         (f.district ? ', ' + esc(f.district) : '') +
       '</div>' +
       '<div class="rule"></div>' +
+      '<div class="signed">— ' + esc(who) + '</div>' +
+      '<div class="rule"></div>' +
       '<div class="lines">' +
-        row('Distance', (f.dist / 1000).toFixed(2) + ' km') +
+        row('Set off from', WISH.startedFrom || '—') +
+        row('Headed for', DEST.n || '—') +
+        row('Distance driven', (f.dist / 1000).toFixed(2) + ' km') +
         row('Duration', fmtDur(f.dur)) +
+        (arrived ? '' : row('Closest approach', fmtM(short))) +
         row('Top speed', Math.round(car.topV * 3.6) + ' km/h') +
         row('Detour', f.detour >= 3 ? '3.0×+ direct' : f.detour.toFixed(1) + '× direct') +
         row('Over the limit', f.overPct + '% of the drive') +
@@ -2156,16 +2825,15 @@
       '<div class="rule"></div>' +
       '<canvas id="routeThumb"></canvas>' +
       '<div class="rule"></div>' +
-      '<div class="foot">Map data © OpenStreetMap contributors, ODbL<br>' +
-        'Route simplified with Ramer–Douglas–Peucker at 3 m</div>';
+      '<div class="foot">' + esc(title) + '<br>' +
+        'Map data © OpenStreetMap contributors, ODbL</div>';
 
     drawRoute(document.getElementById('routeThumb'), pts);
 
-    document.getElementById('note').innerHTML =
-      '<b>What just happened.</b> The title came from a rule table — detour ratio, ' +
-      'top landmark category, clock. Drive a few times and you will feel the seams: ' +
-      'that is exactly the seam a model call is worth paying for. The numbers, the ' +
-      'landmark matching and the route line all come from real geometry and need no model at all.';
+    document.getElementById('note').innerHTML = arrived
+      ? '<b>You made it.</b> Screenshot the receipt and set someone else the same drive.'
+      : '<b>Not there yet.</b> Screenshot it anyway, or hit <i>Keep driving</i> and ' +
+        'carry on from where you stopped.';
   }
   function row(k, v) {
     return '<div class="line"><span class="k">' + k + '</span><span class="v">' + esc(v) + '</span></div>';
@@ -2175,27 +2843,137 @@
   var titleVeil = document.getElementById('titleVeil');
   var receiptVeil = document.getElementById('receiptVeil');
 
-  // Start-area picker, built from the place names in the extract.
-  function buildAreaPicker() {
-    var sel = document.getElementById('startArea');
-    var def = document.createElement('option');
-    def.value = '';
-    def.textContent = 'Museum & Kanakakunnu';
-    sel.appendChild(def);
+  function kmBetween(a, b) {
+    return (Math.hypot(a.x - b.x, a.y - b.y) / 1000).toFixed(1) + ' km';
+  }
+
+  function placeOption(p, from) {
+    var o = document.createElement('option');
+    o.value = p.x + ',' + p.y;
+    // Straight-line, because routing 236 places would stall the title screen.
+    // The road is always longer; the credit line says so.
+    o.textContent = from ? p.n + ' · ' + kmBetween(from, p) : p.n;
+    o.dataset.place = p.n;
+    return o;
+  }
+
+  function fillPlaceGroups(sel, from) {
     [[3, 'Suburbs'], [2, 'Neighbourhoods'], [1, 'Junctions & localities']].forEach(function (g) {
       var items = places.filter(function (p) { return p.r === g[0]; })
                         .sort(function (a, b) { return a.n.localeCompare(b.n); });
       if (!items.length) return;
       var og = document.createElement('optgroup');
       og.label = g[1] + ' (' + items.length + ')';
-      items.forEach(function (p) {
-        var o = document.createElement('option');
-        o.value = p.x + ',' + p.y;
-        o.textContent = p.n;
-        og.appendChild(o);
-      });
+      items.forEach(function (p) { og.appendChild(placeOption(p, from)); });
       sel.appendChild(og);
     });
+  }
+
+  // Start-area picker, built from the place names in the extract.
+  function buildAreaPicker() {
+    var sel = document.getElementById('startArea');
+    var geo = document.createElement('option');
+    geo.value = 'geo';
+    geo.textContent = 'Where I am right now';
+    sel.appendChild(geo);
+    var def = document.createElement('option');
+    def.value = '';
+    def.textContent = 'Museum & Kanakakunnu';
+    def.dataset.place = 'Museum & Kanakakunnu';
+    sel.appendChild(def);
+    sel.value = '';
+    fillPlaceGroups(sel, null);
+    // Moving the start re-sorts where you can drive to, so the short-drive group
+    // at the top stays short.
+    sel.addEventListener('change', function () { buildDestPicker(); showTrip(); });
+  }
+
+  // Where a drive is headed. Rebuilt whenever the start moves: short drives are
+  // the ones people finish, and sorted alphabetically across 236 entries the near
+  // ones are unfindable -- so the closest are lifted into their own group on top.
+  function buildDestPicker() {
+    var sel = document.getElementById('destArea');
+    var keep = sel.value;
+    var from = startPoint();
+    sel.innerHTML = '';
+
+    var rnd = document.createElement('option');
+    rnd.value = 'rnd';
+    rnd.textContent = 'Surprise me';
+    sel.appendChild(rnd);
+
+    // 600 m keeps the place you are already standing in out of the short list.
+    var near = places.filter(function (p) {
+      return Math.hypot(from.x - p.x, from.y - p.y) > 600;
+    }).sort(function (a, b) {
+      return Math.hypot(from.x - a.x, from.y - a.y) - Math.hypot(from.x - b.x, from.y - b.y);
+    }).slice(0, 14);
+    if (near.length) {
+      var ogNear = document.createElement('optgroup');
+      ogNear.label = 'Short drives from there';
+      near.forEach(function (p) { ogNear.appendChild(placeOption(p, from)); });
+      sel.appendChild(ogNear);
+    }
+    fillPlaceGroups(sel, from);
+
+    // Keep the driver's own choice across a start change if it is still listed.
+    if ([].some.call(sel.options, function (o) { return o.value === keep; })) {
+      sel.value = keep;
+      return;
+    }
+    // Otherwise default to roughly 5 km out -- far enough to be a drive worth
+    // taking, near enough to finish. Defaulting to the nearest place gives a
+    // two-minute crawl and makes the whole thing look pointless.
+    var best = null, bestOff = Infinity;
+    places.forEach(function (p) {
+      var off = Math.abs(Math.hypot(from.x - p.x, from.y - p.y) - 5000);
+      if (off < bestOff) { bestOff = off; best = p; }
+    });
+    sel.value = best ? best.x + ',' + best.y : 'rnd';
+  }
+
+  // The point a drive would start from. With "where I am right now" there is no
+  // coordinate until the phone answers, so fall back to the default spawn rather
+  // than leave the destination list sorted against nothing.
+  function startPoint() {
+    var v = document.getElementById('startArea').value;
+    if (v && v !== 'geo') {
+      var xy = v.split(',');
+      return { x: parseFloat(xy[0]), y: parseFloat(xy[1]) };
+    }
+    return { x: SPAWN.x, y: SPAWN.y };
+  }
+
+  // Resolves the picker to a fixed point, random included -- call it once per
+  // drive, or "Surprise me" would land somewhere new every time it is read.
+  function applyDest() {
+    var sel = document.getElementById('destArea');
+    if (sel.value === 'rnd') {
+      var from = startPoint();
+      var far = places.filter(function (p) {
+        return Math.hypot(from.x - p.x, from.y - p.y) > 1500;
+      });
+      var pool = far.length ? far : places;
+      var p = pool[Math.floor(Math.random() * pool.length)];
+      setDest(p.x, p.y, p.n);
+      return;
+    }
+    var xy = sel.value.split(',');
+    setDest(parseFloat(xy[0]), parseFloat(xy[1]),
+            (sel.options[sel.selectedIndex] || {}).dataset.place || '');
+  }
+
+  function showTrip() {
+    var el = document.getElementById('tripLine');
+    var sel = document.getElementById('destArea');
+    if (sel.value === 'rnd') {
+      el.innerHTML = 'Somewhere on the map, picked when you set off.';
+      return;
+    }
+    var from = startPoint(), xy = sel.value.split(',');
+    var to = { x: parseFloat(xy[0]), y: parseFloat(xy[1]) };
+    var name = (sel.options[sel.selectedIndex] || {}).dataset.place || '';
+    el.innerHTML = 'To <b>' + esc(name) + '</b> — about <b>' + kmBetween(from, to) + '</b> away.';
   }
 
   function buildCarPicker() {
@@ -2222,24 +3000,101 @@
       ' <i>— ' + CAR.note + '</i>';
   }
 
-  document.getElementById('startBtn').addEventListener('click', function () {
-    var v = document.getElementById('startArea').value;
-    if (v) {
-      var xy = v.split(',');
-      spawnAt(parseFloat(xy[0]), parseFloat(xy[1]));
-    }
+  var startBtn = document.getElementById('startBtn');
+  var startNote = document.getElementById('startNote');
+
+  function say(msg, bad) {
+    startNote.textContent = msg;
+    startNote.classList.toggle('bad', !!bad);
+    startNote.hidden = false;
+  }
+
+  function beginDrive(from) {
+    WISH.name = (document.getElementById('driverName').value || '').trim();
+    WISH.startedFrom = from || '';
     titleVeil.hidden = true;
     document.getElementById('touch').classList.add('armed');
     initAudio();                        // needs the click: browsers gate audio on a gesture
     running = true;
     resetRun();
+    elGuide.hidden = false;
+    if (!WISH.route) say('', false);
+  }
+
+  startBtn.addEventListener('click', function () {
+    var sel = document.getElementById('startArea');
+    var v = sel.value;
+
+    // Resolve the destination once, here, so a random pick is fixed before it is
+    // checked against the start -- and so both routes into beginDrive agree.
+    applyDest();
+    var from = startPoint();
+    if (Math.hypot(DEST.x - from.x, DEST.y - from.y) < ARRIVE_R * 4) {
+      say('That is where you are starting from. Pick somewhere else to drive to.', true);
+      return;
+    }
+
+    if (v !== 'geo') {
+      if (v) {
+        var xy = v.split(',');
+        spawnAt(parseFloat(xy[0]), parseFloat(xy[1]));
+      }
+      beginDrive(v ? sel.options[sel.selectedIndex].dataset.place : 'Museum & Kanakakunnu');
+      return;
+    }
+
+    // "Where I am right now" — only useful to someone actually in the city, and
+    // the map is 16 x 24 km, so most friends will land outside it. That is not an
+    // error worth an alert box; just tell them and leave them on the picker.
+    if (!navigator.geolocation) {
+      say('This browser will not share a location. Pick a place to start from.', true);
+      sel.selectedIndex = 1;
+      return;
+    }
+    startBtn.disabled = true;
+    say('Asking your phone where you are…', false);
+    navigator.geolocation.getCurrentPosition(function (pos) {
+      startBtn.disabled = false;
+      var x = (pos.coords.longitude - META.lon0) * META.mpdLon;
+      var y = (pos.coords.latitude - META.lat0) * META.mpdLat;
+      var e = META.ext;
+      if (x < e[0] || x > e[2] || y < e[1] || y > e[3]) {
+        var away = Math.hypot(Math.max(e[0] - x, 0, x - e[2]), Math.max(e[1] - y, 0, y - e[3]));
+        say('You are about ' + (away / 1000).toFixed(0) + ' km outside the map — this ' +
+            'city is only Thiruvananthapuram. Pick somewhere in it to set off from.', true);
+        sel.selectedIndex = 1;
+        return;
+      }
+      if (!spawnAt(x, y)) {
+        say('There is no road near you on this map. Pick a place instead.', true);
+        sel.selectedIndex = 1;
+        return;
+      }
+      beginDrive('where you were standing');
+    }, function () {
+      startBtn.disabled = false;
+      say('No location shared, which is fair. Pick a place to start from.', true);
+      sel.selectedIndex = 1;
+    }, { timeout: 12000, maximumAge: 60000 });
   });
 
+  // Rolled to a stop at the destination: that is the end of the story.
+  function arrive() {
+    if (WISH.printed) return;
+    WISH.printed = true;
+    running = false;
+    buildReceipt();
+    receiptVeil.hidden = false;
+  }
+
   document.getElementById('recenterBtn').addEventListener('click', recentre);
+
+  document.getElementById('compassBtn').addEventListener('click', cycleRot);
 
   document.getElementById('driveHere').addEventListener('click', function () {
     if (!selected) return;
     spawnAt(selected.x, selected.y);
+    WISH.startedFrom = selected.n || '';
     closeMap();
     running = true;
     resetRun();
@@ -2256,6 +3111,21 @@
     buildReceipt();
     receiptVeil.hidden = false;
   });
+
+  // The only ways out of a drive were "again" from the same spot and the map's
+  // start-here pin -- neither lets you change the name, the vehicle or the place
+  // you set off from. This puts the title card back, with the fields as typed.
+  function backToTitle() {
+    running = false;
+    receiptVeil.hidden = true;
+    closeMap();
+    elGuide.hidden = true;
+    startNote.hidden = true;
+    titleVeil.hidden = false;
+    titleVeil.scrollTop = 0;
+  }
+  document.getElementById('restartBtn').addEventListener('click', backToTitle);
+  document.getElementById('mapRestart').addEventListener('click', backToTitle);
 
   document.getElementById('againBtn').addEventListener('click', function () {
     receiptVeil.hidden = true;
@@ -2279,11 +3149,41 @@
   buildMini();
   buildPoiList();
   buildAreaPicker();
+  buildDestPicker();
+  applyDest();
+  showTrip();
+  document.getElementById('destArea').addEventListener('change', showTrip);
   buildCarPicker();
-  addEventListener('resize', function () {
-    resize(); buildMini();
+  syncCompassBtn();
+  // Rotating a phone is the case the resize event handles worst: iOS fires it
+  // before the viewport has settled, so clientWidth/Height still read portrait
+  // and the canvas keeps a portrait backing store that CSS then stretches across
+  // a landscape box -- the map comes out elongated. A ResizeObserver watches the
+  // element's actual box and fires again once it really changes, so the backing
+  // store always matches. The listeners stay as a fallback for older browsers.
+  function reflow() {
+    resize();
+    buildMini();
     if (!mapVeil.hidden) renderAtlas();
+  }
+  addEventListener('resize', reflow);
+  addEventListener('orientationchange', function () {
+    reflow();
+    setTimeout(reflow, 120);          // after iOS finishes the rotation
+    setTimeout(reflow, 400);
   });
+  if (window.ResizeObserver) {
+    new ResizeObserver(function () {
+      if (cv.clientWidth !== W || cv.clientHeight !== H) reflow();
+    }).observe(cv);
+  }
+  if (window.visualViewport) visualViewport.addEventListener('resize', reflow);
+  // Warm the routing graph while the title screen is still up. It is idle work —
+  // nobody presses Start before reading the card — and it keeps the first tap
+  // from stalling on a phone.
+  if (window.requestIdleCallback) requestIdleCallback(buildGraph, { timeout: 4000 });
+  else setTimeout(buildGraph, 500);
+
   raf = requestAnimationFrame(frame);
 })();
 </script>

@@ -11,3 +11,6 @@ index.html.gz
 
 .DS_Store
 __pycache__/
+
+# Screenshots dropped in for debugging
+/*.png

@@ -1,8 +1,9 @@
 # Trivandrum Night Drive
 
 A top-down night-driving toy over ~374 km² of the real Thiruvananthapuram, rendered from
-OpenStreetMap data. Drive anywhere; your trail becomes a printed "journey receipt" —
-distance, detour ratio, time over the speed limit, landmarks passed, and a generated title.
+OpenStreetMap data. Pick where you start and where you're headed, follow the guide arrow,
+and your trail becomes a printed "journey receipt" — distance, detour ratio, time over the
+speed limit, landmarks passed, and a generated title.
 
 Built as a prototype of the *route-as-a-story* idea: everything on the receipt except the
 title sentence comes from real geometry and needs no model.
@@ -29,9 +30,17 @@ road · `M` or `Tab` full map and points list · `−`/`+` or scroll to zoom · 
 On touch devices the pedals and steering pads appear automatically, two-finger **pinch**
 zooms, and `⌖` recentres and resets the zoom.
 
-Pick a **start area** on the title screen — 236 named places grouped into suburbs,
-neighbourhoods and junctions — so you don't have to drive 20 km to reach Kovalam. On the
-full map, click any point or any name in the list to inspect it, then *Start a drive here*.
+Pick a **start** and a **destination** on the title screen — the same list of named places
+grouped into suburbs, neighbourhoods and junctions, plus *Surprise me* — so you don't have
+to drive 20 km to reach Kovalam. Moving the start re-sorts the destination list, and the
+closest few are lifted into a *short drives* group on top, because a short drive is the one
+people actually finish. The default lands about 5 km out.
+
+A guide arrow in the HUD points along the road route and counts down the distance; get
+within 45 m and the drive is done. Off-route by more than 70 m for two seconds and the
+route re-plans. On the full map, click any point or any name in the list to inspect it,
+then *Start a drive here* — that moves where you are driving from, not where you're
+headed.
 
 Off the carriageway you are not walled in, just slow — about 30 km/h with heavy rolling
 drag. Buildings are solid, resolved per-axis so you slide along walls rather than wedging

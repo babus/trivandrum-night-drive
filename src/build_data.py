@@ -1,6 +1,11 @@
 import json, math, collections, os, glob
 
-BBOX = (8.375, 76.858, 8.592, 77.000)             # minLat, minLon, maxLat, maxLon
+import route_graph
+
+# West edge is 76.843, not the 76.858 the first extract used: the old edge cut
+# through Menamkulam and left the Kazhakkoottam coast strip -- and the drive's
+# destination -- about 700 m outside the world. See fetch_west.sh.
+BBOX = (8.375, 76.843, 8.592, 77.000)             # minLat, minLon, maxLat, maxLon
 LAT0 = (BBOX[0] + BBOX[2]) / 2
 LON0 = (BBOX[1] + BBOX[3]) / 2
 MPD_LAT = 110574.0
@@ -64,7 +69,8 @@ def centroid(pts):
     return (sum(p[0] for p in pts) / len(pts), sum(p[1] for p in pts) / len(pts))
 
 # ---------- roads / areas / landmarks ----------
-rn, rw = load('roads2.json', 'roads3n.json', 'roads3w.json', 'roads4.json')
+rn, rw = load('roads2.json', 'roads3n.json', 'roads3w.json', 'roads4.json',
+              'roads6w.json')
 
 ROAD_CLASS = {
     'motorway': 'p', 'trunk': 'p', 'primary': 'p', 'motorway_link': 'p',
@@ -334,7 +340,7 @@ def add_lm(name, cat, x, y, tags=None):
         rec['h'] = oh
     landmarks.append(rec)
 
-sn, sw = load('poi2.json', 'poi3.json', 'poi4.json')
+sn, sw = load('poi2.json', 'poi3.json', 'poi4.json', 'poi6.json')
 
 # Neighbourhood / junction names — how locals actually navigate. Not collectible;
 # drawn as faint district labels on the map.
@@ -417,7 +423,11 @@ for w in bw:
     if pts[0] == pts[-1]:
         pts = pts[:-1]
     a = area(pts)
-    if a < 25:                        # city-wide now; drop sheds to keep the file sane
+    # 80 m2, not 25: footprints are 11.7 MB of a 16.9 MB page, and the ones under
+    # 80 m2 are sheds, outhouses and lean-tos that read as noise at driving zoom.
+    # Dropping them takes roughly 4 MB off what a phone has to fetch and leaves
+    # every street, junction and neighbourhood exactly where it was.
+    if a < 80:
         continue
     sp = rdp(pts + [pts[0]], 1.1)[:-1]
     if len(sp) < 3:
@@ -436,6 +446,12 @@ _x0, _y0 = proj(BBOX[0], BBOX[1])
 _x1, _y1 = proj(BBOX[2], BBOX[3])
 EXT = [round(_x0), round(_y0), round(_x1), round(_y1)]
 
+# ---------- routing graph ----------
+# The pieces above are drawn geometry, not a network: see route_graph for why
+# they have to be re-noded before anything can be routed over them.
+print('routing graph...')
+graph = route_graph.build(roads)
+
 out = {
     'meta': {
         'lat0': LAT0, 'lon0': LON0,
@@ -449,6 +465,7 @@ out = {
     'buildings': buildings,
     'landmarks': landmarks,
     'places': places,
+    'graph': graph,
 }
 
 s = json.dumps(out, separators=(',', ':'), ensure_ascii=False)
